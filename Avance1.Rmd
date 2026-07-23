@@ -198,3 +198,76 @@ A partir del análisis exploratorio realizado, el conjunto de datos presenta un 
 No se identificaron inconsistencias relevantes en la escritura de categorías ni en el formato general de las variables, por lo que no se considera necesario aplicar procesos extensivos de estandarización. En consecuencia, el plan de limpieza se centra principalmente en la eliminación de registros duplicados, la conversión de las variables categóricas al tipo \texttt{factor} y la conservación de los valores faltantes en variables como \texttt{DIRECTOR}, \texttt{SUPERVISOR} y \texttt{TELEFONO}, ya que cualquier imputación introduciría información artificial.
 
 Finalmente, se recomienda documentar todas las transformaciones realizadas sobre el conjunto de datos y mantener una etapa de validación posterior durante el análisis, especialmente para revisar registros con categorías poco frecuentes, como el caso de \textit{SIN ESPECIFICAR} en la variable \texttt{AREA}, y para verificar aquellos establecimientos que comparten una misma dirección cuando el objetivo del estudio requiera identificar ubicaciones únicas.
+
+
+###Limpieza de dataset
+
+
+```{r}
+library(dplyr)
+library(stringr)
+
+DATOS_LIMPIOS <- DATOS_CRUDOS %>%
+  # 1. Corrección de desfases en cadena por comas en DEPARTAMENTAL
+  mutate(
+    DESFASADO = str_detect(DEPARTAMENTAL, ","),
+    JORNADA = ifelse(DESFASADO, PLAN, JORNADA),
+    PLAN = ifelse(DESFASADO, str_trim(str_extract(DEPARTAMENTAL, "^[^,]+")), PLAN),
+    DEPARTAMENTAL = ifelse(DESFASADO, str_trim(str_extract(DEPARTAMENTAL, "[^,]+$")), DEPARTAMENTAL)
+  ) %>%
+  select(-DESFASADO) %>%
+  
+  # 2. Eliminar registros duplicados
+  distinct() %>%
+  
+  # 3. Normalizar espacios en blanco
+  mutate(across(where(is.character), str_trim)) %>%
+  mutate(across(where(is.character), str_squish)) %>%
+  
+  # 4. Convertir 'sin dato', '--' o vacíos a NA
+  mutate(across(where(is.character), ~ ifelse(. %in% c("", "N/A", "NULL", "-", "--", ".", "sin dato", "SIN DATO"), NA_character_, .))) %>%
+  
+  # 5. PASO CORREGIDO: Reacomodar columnas coladas hacia la izquierda
+  
+  # A) Si SUPERVISOR tiene un teléfono (8 dígitos), pasarlo a TELEFONO
+  mutate(
+    TEL_EN_SUPERVISOR = str_detect(SUPERVISOR, "^[0-9]{8}$"),
+    TELEFONO = ifelse(TEL_EN_SUPERVISOR, SUPERVISOR, TELEFONO),
+    SUPERVISOR = ifelse(TEL_EN_SUPERVISOR, NA_character_, SUPERVISOR)
+  ) %>%
+  select(-TEL_EN_SUPERVISOR) %>%
+  
+  # B) Si SUPERVISOR es NA y DIRECTOR tiene valor, mover DIRECTOR a SUPERVISOR
+  mutate(
+    SUPER_VACIO = is.na(SUPERVISOR) & !is.na(DIRECTOR),
+    SUPERVISOR = ifelse(SUPER_VACIO, DIRECTOR, SUPERVISOR),
+    DIRECTOR = ifelse(SUPER_VACIO, NA_character_, DIRECTOR)
+  ) %>%
+  select(-SUPER_VACIO) %>%
+  
+  # C) Si DIRECTOR es NA y NIVEL tiene un nombre de persona (no es 'DIVERSIFICADO', 'BASICO', etc.)
+  # Mover el nombre de NIVEL hacia DIRECTOR/SUPERVISOR según corresponda
+  mutate(
+    NIVEL_ES_NOMBRE = !is.na(NIVEL) & !NIVEL %in% c("DIVERSIFICADO", "BASICO", "BÁSICO", "PRIMARIA", "PREPRIMARIA", "INICIAL", "PARVULOS", "PÁRVULOS"),
+    
+    # Si SUPERVISOR está vacío, va a SUPERVISOR; si no, va a DIRECTOR
+    SUPERVISOR = ifelse(NIVEL_ES_NOMBRE & is.na(SUPERVISOR), NIVEL, SUPERVISOR),
+    DIRECTOR = ifelse(NIVEL_ES_NOMBRE & !is.na(SUPERVISOR) & is.na(DIRECTOR), NIVEL, DIRECTOR),
+    NIVEL = ifelse(NIVEL_ES_NOMBRE, NA_character_, NIVEL)
+  ) %>%
+  select(-NIVEL_ES_NOMBRE) %>%
+  
+  # Formato final de TELEFONO (solo 8 dígitos)
+  mutate(TELEFONO = str_replace_all(TELEFONO, "[^0-9]", "")) %>%
+  mutate(TELEFONO = ifelse(nchar(TELEFONO) != 8, NA_character_, TELEFONO)) %>%
+  
+  # 6. Reordenar: enviar DIRECCION al final
+  relocate(DIRECCION, .after = last_col()) %>%
+  
+  # 7. Convertir variables categóricas a factor
+  mutate(across(c(DISTRITO, DEPARTAMENTO, MUNICIPIO, SUPERVISOR, NIVEL, SECTOR, AREA, STATUS, MODALIDAD, JORNADA, PLAN, DEPARTAMENTAL), as.factor))
+
+str(DATOS_LIMPIOS)
+head(DATOS_LIMPIOS, n=15)
+
+```
