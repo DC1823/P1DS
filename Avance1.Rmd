@@ -1,0 +1,200 @@
+---
+title: "Avance del Proyecto 1"
+date: "`r Sys.Date()`"
+
+output:
+  pdf_document:
+    keep_tex: true
+
+header-includes:
+  - \usepackage{pdflscape}
+---
+
+
+## Setup and Data Import
+
+```{r setup, include=FALSE}
+library(readr)
+library(tidyverse)
+knitr::opts_chunk$set(echo = TRUE)
+
+DATOS_CRUDOS <- read_csv("DATOS_CRUDOS.csv", show_col_types = FALSE)
+```
+
+## Analisis de Calidad de Datos
+
+### Número de Registros y Variables
+
+```{r}
+tibble(
+  Registros = nrow(DATOS_CRUDOS),
+  Variables = ncol(DATOS_CRUDOS)
+)
+```
+
+Existen 9728 registros con 17 variables diferentes en cada uno.
+
+### Tipo de dato de cada variable
+
+```{r}
+DATOS_CRUDOS %>%
+  summarise(across(everything(), class)) %>%
+  pivot_longer(
+    everything(),
+    names_to = "Variable",
+    values_to = "Tipo"
+  )
+```
+
+Debido a la naturaleza de la información recolectada todos los datos vienen en formato de character, en el futuro se discutirá la posibilidad de manejar estos datos como categorias fijas de manera que se haga mas eficiente el analisis de la información.
+
+### Cantidad y porcentaje de valores faltantes
+
+```{r}
+DATOS_CRUDOS %>%
+  summarise(
+    across(
+      everything(),
+      ~sum(is.na(.))
+    )
+  ) %>%
+  pivot_longer(
+    everything(),
+    names_to = "Variable",
+    values_to = "Faltantes"
+  ) %>%
+  mutate(
+    Porcentaje = round(Faltantes / nrow(DATOS_CRUDOS) * 100, 3)
+  ) %>% arrange(desc(Porcentaje))
+```
+
+Los porcentajes mas altos de datos faltantes se dan en variables de valores casi unicos, como lo son nombres de personas en cargos o numeros de telefono, esto, dificulta el uso de estrategias para eliminar valores faltantes en un futuro.
+
+### Cantidad de Valores Unicos
+
+```{r}
+DATOS_CRUDOS %>%
+  summarise(
+    across(
+      everything(),
+      n_distinct
+    )
+  ) %>%
+  pivot_longer(
+    everything(),
+    names_to = "Variable",
+    values_to = "Valores_Unicos"
+  ) %>% arrange(desc(Valores_Unicos))
+```
+
+Existen valores que tiene sentido que sean unicos, como lo es el identificador principal de un establecimiento (en este caso el codigo) por otro lado, existen datos cuya falta de unicidad me preocupa que existan menos direcciones que datos, lo que sugiere que existen establecimientos que comparten una misma dirección, lo cual no es del todo intuitivo.
+
+### Cantidad de duplicados exactos
+
+```{r}
+tibble(
+  Registros_Duplicados = sum(duplicated(DATOS_CRUDOS))
+)
+```
+
+Se encontraron un total de 21 datos completamente duplicados en el dataset, esto no sugiere una cantidad importante (menos del 1%) por lo que estos valores pueden ser eliminados en caso de utilizar este dataset en un analisis.
+
+### Variables con valores o formatos inconsistentes
+
+Durante la creación de este documento, se intentaron usar diversas herramientas de R para identificar variables mal formateadas o cuyos formatos no fueran del todo consistentes, estos codigos, debido a la falta de errores, daban como resultado tablas vacias y errores, por lo que fueron eliminados en la presentación final del mismo, un archivo con los codigos probados será agregado a la entrega y para mantener el orden y el formato en este documento, no se agregaron.
+
+### Identificación de problemas clave en la calidad de los datos
+
+El conjunto de datos está conformado por 9,728 registros y 17 variables, y en términos generales presenta una buena calidad, ya que no se identificaron problemas significativos que comprometan su utilización en análisis posteriores.
+
+Todas las variables fueron importadas con tipo de dato character, situación atribuible al formato original de la fuente de datos y no a un problema de calidad de la información. Para etapas posteriores del análisis, sería recomendable convertir aquellas variables categóricas a tipo factor y asignar el tipo de dato adecuado a las variables correspondientes, con el fin de optimizar el procesamiento y facilitar la aplicación de métodos estadísticos.
+
+En relación con los valores faltantes, los mayores porcentajes se concentran en variables cuyos valores son prácticamente únicos, como nombres de personas responsables o números telefónicos. Debido a esta característica, la imputación de dichos valores no resulta sencilla; sin embargo, estas variables no constituyen el núcleo de la información del conjunto de datos, por lo que su ausencia no representa un riesgo importante para la mayoría de los análisis.
+
+El análisis de valores únicos mostró un comportamiento consistente para la mayoría de las variables. En particular, el código identificador de cada establecimiento presenta unicidad casi total, como es esperado. No obstante, se observó que la variable correspondiente a la dirección posee menos valores únicos que el número total de establecimientos, lo que indica que algunos registros comparten la misma dirección. Aunque esta situación puede ser completamente válida (por ejemplo, cuando varios establecimientos operan en una misma ubicación), conviene revisarla dependiendo del objetivo específico del análisis.
+
+Asimismo, se identificaron únicamente 21 registros completamente duplicados, cantidad que representa una fracción muy pequeña del conjunto de datos (menos del 1 %). Debido a su baja incidencia, estos registros pueden eliminarse fácilmente durante la etapa de limpieza sin afectar la representatividad de la información.
+
+Finalmente, se realizaron pruebas para detectar automáticamente inconsistencias en el formato de las variables mediante diferentes herramientas disponibles en R. Estas evaluaciones no identificaron anomalías relevantes, por lo que no fue necesario aplicar procesos adicionales de estandarización. Los scripts desarrollados durante esta exploración se adjuntan como material complementario.
+
+En conjunto, los resultados obtenidos indican que el conjunto de datos se encuentra en buenas condiciones para su utilización. Las observaciones identificadas corresponden principalmente a aspectos menores de limpieza y preparación, por lo que el dataset puede emplearse en análisis posteriores con modificaciones mínimas, limitadas principalmente a la asignación de tipos de datos adecuados y a la eliminación de los pocos registros duplicados detectados.
+
+\newpage
+\begin{landscape}
+
+\footnotesize
+\renewcommand{\arraystretch}{1.35}
+
+\begin{table}[ht]
+\centering
+
+\begin{tabular}{p{3cm} p{4cm} p{4.5cm} p{4.2cm} p{4cm}}
+\hline
+\textbf{Variable(s)} &
+\textbf{Problemas encontrados} &
+\textbf{Regla de limpieza} &
+\textbf{Justificación} &
+\textbf{Riesgos asociados} \\
+\hline
+
+\textbf{CODIGO} &
+22 valores faltantes y presencia de registros duplicados. Funciona como identificador casi único del establecimiento. &
+Eliminar registros completamente duplicados. Mantener los registros con código faltante únicamente si contienen información útil en las demás variables; en caso contrario, eliminarlos. &
+Al ser el identificador principal del establecimiento, imputarlo introduciría información incorrecta. &
+La eliminación de registros podría ocasionar una ligera pérdida de información si algún duplicado corresponde a una actualización legítima. \\
+\hline
+
+\textbf{DIRECTOR, SUPERVISOR y TELEFONO} &
+Presentan los mayores porcentajes de valores faltantes (12.5\%, 3.35\% y 7.24\%, respectivamente). Además, poseen una alta cardinalidad al tratarse de nombres propios y teléfonos. &
+Conservar los valores faltantes sin imputación. Estandarizar únicamente el formato de los teléfonos eliminando espacios o caracteres innecesarios cuando existan. &
+No existe un método objetivo para imputar nombres o teléfonos sin introducir información artificial. &
+Los análisis relacionados con responsables o información de contacto tendrán registros incompletos. \\
+\hline
+
+\textbf{DIRECCION} &
+91 valores faltantes y una cantidad de direcciones considerablemente menor que la cantidad de establecimientos. &
+Mantener los valores faltantes y revisar manualmente las direcciones compartidas únicamente cuando el análisis requiera identificar ubicaciones únicas. &
+Es posible que varios establecimientos funcionen en una misma dirección, por lo que la repetición no necesariamente representa un error. &
+Podrían existir registros duplicados por dirección que requieran validación manual. \\
+\hline
+
+\textbf{NIVEL} &
+Todos los registros válidos pertenecen a la categoría \textit{DIVERSIFICADO}; únicamente existen valores faltantes. &
+Convertir la variable a tipo \texttt{factor}. Evaluar su eliminación en modelos donde no aporte información por carecer de variabilidad. &
+Una variable constante no contribuye al análisis estadístico ni a modelos predictivos. &
+Si posteriormente se incorporan datos de otros niveles educativos, será necesario conservar la variable. \\
+\hline
+
+\textbf{Variables categóricas} &
+Las demas variables fueron importadas como \texttt{character}. La categoría \textit{SIN ESPECIFICAR} aparece únicamente en dos registros de AREA. &
+Convertir todas las variables categóricas a tipo \texttt{factor}. Revisar manualmente los registros con \textit{SIN ESPECIFICAR} para determinar si pueden clasificarse correctamente. &
+Estas variables representan categorías discretas y el uso de factores mejora la eficiencia del procesamiento y facilita el análisis estadístico. &
+La incorporación de nuevas categorías en futuras actualizaciones requerirá redefinir los niveles del factor. \\
+\hline
+
+\textbf{Registros duplicados} &
+Se identificaron 21 registros completamente duplicados, equivalentes a menos del 1\% del conjunto de datos. &
+Eliminar los registros duplicados exactos utilizando funciones como \texttt{distinct()} o \texttt{duplicated()}. &
+Los registros duplicados no aportan información adicional y pueden sesgar análisis descriptivos y estadísticos. &
+Debido a la naturaleza del dataset no existe riesgo de eliminar registros distintos. \\
+\hline
+
+\end{tabular}
+
+\caption{Plan de limpieza propuesto para el conjunto de datos.}
+
+\end{table}
+
+\normalsize
+
+\end{landscape}
+
+\newpage
+
+\section*{Consideraciones generales}
+
+A partir del análisis exploratorio realizado, el conjunto de datos presenta un nivel de calidad adecuado para ser utilizado en análisis posteriores. Los principales problemas identificados corresponden a un reducido número de registros duplicados, valores faltantes concentrados en variables de identificación personal y la importación de todas las variables como tipo \texttt{character}.
+
+No se identificaron inconsistencias relevantes en la escritura de categorías ni en el formato general de las variables, por lo que no se considera necesario aplicar procesos extensivos de estandarización. En consecuencia, el plan de limpieza se centra principalmente en la eliminación de registros duplicados, la conversión de las variables categóricas al tipo \texttt{factor} y la conservación de los valores faltantes en variables como \texttt{DIRECTOR}, \texttt{SUPERVISOR} y \texttt{TELEFONO}, ya que cualquier imputación introduciría información artificial.
+
+Finalmente, se recomienda documentar todas las transformaciones realizadas sobre el conjunto de datos y mantener una etapa de validación posterior durante el análisis, especialmente para revisar registros con categorías poco frecuentes, como el caso de \textit{SIN ESPECIFICAR} en la variable \texttt{AREA}, y para verificar aquellos establecimientos que comparten una misma dirección cuando el objetivo del estudio requiera identificar ubicaciones únicas.
