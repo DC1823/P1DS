@@ -1,0 +1,11 @@
+Metrica,Antes,Despues
+Registros,9728,9706
+Variables,17,23
+Valores faltantes,2929 (1.77%),13013 (5.83%)
+Variables con NA,17,8
+Duplicados exactos,21,0
+Posibles duplicados,0,6274 detectados / 1689 marcados para revision (ninguno eliminado ni fusionado automaticamente)
+Variables con formato inconsistente,7,1
+Variables con tipo incorrecto,17,0
+Categorias inconsistentes,6,0
+Errores corregidos,-,160952
