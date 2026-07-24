@@ -1,0 +1,11 @@
+﻿Métrica,Antes,Después,Explicación
+Registros,9728,9707,Se eliminaron 21 duplicados exactos.
+Variables,17,19,Se agregaron telefono_valido y posible_duplicado.
+Valores faltantes,2998,2802,Se estandarizaron marcadores de ausencia; los teléfonos inválidos quedaron vacíos.
+Variables con NA,17,17,Conteo de variables con al menos una celda vacía.
+Duplicados exactos,21,0,Se conservaron registros únicos.
+Posibles duplicados,No calculado,7309,"Se marcaron, no se eliminaron automáticamente."
+Variables con formato inconsistente,17,0,"Se normalizaron textos, categorías, códigos y teléfonos."
+Variables con tipo incorrecto,17,0,Las variables identificadoras se mantienen como texto; las derivadas son booleanas.
+Categorías inconsistentes,No cuantificado,0,Se estandarizó escritura y se validaron departamentos.
+Errores corregidos,No aplica,123030,Suma de registros/celdas afectados por transformaciones documentadas.

@@ -1,0 +1,8 @@
+﻿Variable,Problema detectado,Transformación,Registros afectados,Justificación
+Todas las variables de texto,"Espacios externos, múltiples e invisibles","Se aplicó trim, reducción de espacios múltiples y eliminación de caracteres de control.",115451,Uniforma el formato sin alterar el contenido semántico.
+Todas las variables de texto,Marcadores de ausencia heterogéneos,"Se convirtieron N/A, NA, NULL, -, --, ., SIN DATO y cadenas vacías a celdas vacías en CSV.",69,Permite interpretar los faltantes de forma consistente al importar el archivo.
+Registro completo,Registros duplicados exactos,Se conservó una sola copia de cada fila idéntica.,21,Evita doble conteo sin fusionar registros parcialmente semejantes.
+TELEFONO,"Espacios, signos y longitudes distintas de ocho dígitos",Se conservaron únicamente ocho dígitos; los valores inválidos quedaron vacíos y se creó telefono_valido.,163,Los teléfonos guatemaltecos del conjunto deben tener ocho dígitos; no se imputaron números.
+Variables categóricas y geográficas,Diferencias de mayúsculas/minúsculas y espacios,Se estandarizaron a mayúsculas y espacios simples.,0,Evita categorías duplicadas por escritura.
+ESTABLECIMIENTO/DIRECCION/TELEFONO,Posibles duplicados parciales,"Se creó posible_duplicado mediante coincidencias de nombre-municipio, nombre-dirección, teléfono y similitud de nombre >= 0.96.",7309,La guía prohíbe eliminar automáticamente posibles duplicados; se marcan para revisión.
+Nombres de variables,Nombres originales en mayúsculas y algunos poco descriptivos,Se renombraron en snake_case; STATUS pasó a estado_establecimiento y DEPARTAMENTAL a direccion_departamental.,17,Facilita su uso en R/Python y mejora la interpretación.
